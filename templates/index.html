@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Expense Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons (Modern Icon Library) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Smooth chart animations & custom glass effects */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-full font-sans antialiased pb-12">
+
+    <!-- Top Navigation Bar -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                    <i data-lucide="sparkles" class="w-5 h-5 animate-pulse"></i>
+                </div>
+                <span class="font-bold text-xl tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">
+                    FinAI <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 ml-1">v2.0</span>
+                </span>
+            </div>
+            <div class="flex items-center gap-4">
+                {% if user %}
+                <span class="text-sm text-slate-300">Hi, {{ user.username }}</span>
+                <a href="/logout" class="text-sm font-medium text-rose-400 hover:text-rose-300 transition-colors">Logout</a>
+                {% endif %}
+                <a href="/monthly" class="flex items-center gap-1.5 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors group">
+                    Monthly Analytics 
+                    <i data-lucide="arrow-right" class="w-4 h-4 transform group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
+
+        <!-- Budget Alert Notification -->
+        {% if budget_alert %}
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 animate-fadeIn">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-400 flex-shrink-0"></i>
+            <p class="text-sm">
+                <span class="font-semibold">Budget Warning:</span> You have exceeded your limit! Spent <span class="font-bold">₹{{ month_total }}</span> out of <span class="font-bold">₹{{ budget }}</span>.
+            </p>
+        </div>
+        {% endif %}
+        {% if year_budget_alert %}
+        <div class="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 animate-fadeIn">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-300 flex-shrink-0"></i>
+            <p class="text-sm">
+                <span class="font-semibold">Yearly Budget Alert:</span> You have exceeded your annual budget of <span class="font-bold">₹{{ year_budget }}</span>.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Metric Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Today's Spend -->
+            <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 translate-x-4 -translate-y-4 w-24 h-24 bg-emerald-500/10 blur-2xl rounded-full"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Today's Expenses</p>
+                        <h3 class="text-3xl font-bold mt-2 text-white">₹{{ today_total }}</h3>
+                    </div>
+                    <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="calendar-range" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+
+            <!-- Monthly Budget Card -->
+            <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+                <div class="absolute right-0 top-0 translate-x-4 -translate-y-4 w-24 h-24 bg-sky-500/10 blur-2xl rounded-full"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Monthly Budget</p>
+                        <h3 class="text-3xl font-bold mt-2 text-white">₹{{ budget }}</h3>
+                    </div>
+                    <div class="p-3 bg-sky-500/10 text-sky-400 rounded-xl"><i data-lucide="dollar-sign" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+
+            <!-- Monthly Progress Card -->
+            <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex-1">
+                        <div class="flex justify-between text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                            <span>Monthly Budget Utilization</span>
+                            <span class="text-slate-200">₹{{ month_total }} / ₹{{ budget }}</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <!-- Dynamically calculates progress bar width using Jinja variables safely -->
+                            <div class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-500" 
+                                 style="width: min(100%, calc(({{ month_total }} / {{ budget }}) * 100%))"></div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl self-start sm:self-center"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Content Layout Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            
+            <!-- Sidebar: Add Expense Form -->
+            <div class="glass-card rounded-2xl p-6 space-y-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i> New Entry
+                </h2>
+                <form method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">Transaction Date</label>
+                        <input type="date" name="date" required 
+                               class="w-full bg-slate-900/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">Description</label>
+                        <input type="text" id="desc" name="desc" placeholder="e.g., Netflix subscription" required onkeyup="predictLive()"
+                               class="w-full bg-slate-900/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                        <!-- AI Predictive Status Text -->
+                        <div id="ai-result" class="text-xs font-medium mt-2 text-indigo-400 flex items-center gap-1 min-h-[16px]"></div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1.5">Amount (INR)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-2.5 text-slate-400 text-sm">₹</span>
+                            <input type="number" step="0.01" name="amount" placeholder="0.00" required
+                                   class="w-full bg-slate-900/50 border border-slate-700/60 rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-sm py-3 rounded-xl shadow-lg shadow-indigo-600/10 transition-all active:scale-[0.98]">
+                        Log Expense
+                    </button>
+                </form>
+
+                <div class="glass-card rounded-2xl p-6 mt-6">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-3">
+                        <i data-lucide="settings" class="w-5 h-5 text-slate-300"></i> Budget Settings
+                    </h2>
+                    <form method="POST" class="space-y-4">
+                        <input type="hidden" name="set_budget" value="1">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5">Monthly Budget (INR)</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-2.5 text-slate-400 text-sm">₹</span>
+                                <input type="number" step="1" name="budget" value="{{ budget }}" required
+                                       class="w-full bg-slate-900/50 border border-slate-700/60 rounded-xl pl-8 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500">Saved monthly budget is used to calculate remaining spend and annual budget.</p>
+                        <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm py-3 rounded-xl transition-all active:scale-[0.98]">
+                            Save Budget
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Visual Analytics / Charts Section -->
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between min-h-[300px]">
+                    <h3 class="text-sm font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-pink-400"></i> Yearly Category Distribution
+                    </h3>
+                    <div class="max-h-[220px] flex flex-col justify-center items-center flex-1 gap-3">
+                        <canvas id="pieChart"></canvas>
+                        <p class="text-xs text-slate-500 text-center">Categories are shown for the current year's spending.</p>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between min-h-[300px]">
+                    <h3 class="text-sm font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4 text-indigo-400"></i> Monthly Timeline
+                    </h3>
+                    <div class="max-h-[220px] flex justify-center items-center flex-1">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-5 flex flex-col justify-between min-h-[300px]">
+                    <h3 class="text-sm font-semibold tracking-wide text-slate-400 flex items-center gap-2 mb-4">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i> Yearly Budget Status
+                    </h3>
+                    <div class="max-h-[220px] flex justify-center items-center flex-1">
+                        <canvas id="yearlyBudgetChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-slate-400">
+                        {% set year_pct = year_budget and ((year_total / year_budget) * 100) | round(1) or 0 %}
+                        <p class="font-medium text-white">₹{{ year_total }} spent this year</p>
+                        <p>{{ year_pct }}% of ₹{{ year_budget }} annual budget</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Main Ledger Grid Section -->
+        <div class="glass-card rounded-2xl overflow-hidden mt-8">
+            <!-- Table Action Header -->
+            <div class="p-5 border-b border-slate-800/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Expense History</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Audit log of your personalized transactions.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4 text-slate-400"></i>
+                    <select onchange="location = this.value;" class="bg-slate-900 border border-slate-700/80 rounded-lg text-xs font-medium text-slate-300 px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+                        <option value="/?month=all">All Months</option>
+                        {% for m in months %}
+                        <option value="/?month={{ m[0] }}" {% if selected_month==m[0] %}selected{% endif %}>{{ m[0] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Responsive Dynamic Data Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300 border-collapse">
+                    <thead class="text-xs font-semibold text-slate-400 bg-slate-900/30 border-b border-slate-800/80">
+                        <tr>
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4">Description</th>
+                            <th class="px-6 py-4">Amount</th>
+                            <th class="px-6 py-4">AI Category</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        {% for e in expenses %}
+                        <tr class="hover:bg-slate-900/30 transition-colors group">
+                            <td class="px-6 py-4 font-mono text-xs text-slate-400 whitespace-nowrap">{{ e[1] }}</td>
+                            <td class="px-6 py-4 font-medium text-white whitespace-nowrap">{{ e[2] }}</td>
+                            <td class="px-6 py-4 font-semibold text-slate-200 whitespace-nowrap">₹{{ e[3] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/10">
+                                    {{ e[4] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right whitespace-nowrap">
+                                <a href="/delete/{{ e[0] }}" onclick="return confirm('Permanently remove this entry?')" 
+                                   class="text-slate-500 hover:text-rose-400 transition-colors p-1.5 hover:bg-rose-500/10 rounded-lg inline-flex items-center gap-1 text-xs">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% if not expenses %}
+                <div class="text-center py-12 text-slate-500">
+                    <i data-lucide="inbox" class="w-10 h-10 mx-auto opacity-40 mb-2"></i>
+                    <p class="text-sm">No expenses matches this timeframe.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+<script>
+// Initialize Lucide SVG Icons 
+lucide.createIcons();
+
+// Live AI Engine prediction handling UI changes smoothly
+async function predictLive() {
+    const desc = document.getElementById('desc').value;
+    const aiBox = document.getElementById('ai-result');
+    if (desc.length < 3) {
+        aiBox.innerHTML = "";
+        return;
+    }
+    
+    aiBox.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> Analyzing intent...`;
+    lucide.createIcons();
+    
+    try {
+        const res = await fetch('/predict', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desc: desc})});
+        const data = await res.json();
+        aiBox.innerHTML = `<i data-lucide="cpu" class="w-3.5 h-3.5"></i> AI Class: <span class="text-slate-200 font-semibold ml-1">${data.category}</span> <span class="opacity-60 ml-1">(${data.confidence}%)</span>`;
+        lucide.createIcons();
+    } catch(e) {
+        aiBox.innerHTML = "";
+    }
+}
+
+// Chart Global Configurations for Dark Theme
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = 'ui-sans-serif, system-ui, sans-serif';
+
+// Category Pie Chart Initialization
+new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut', // Changed to doughnut for a cleaner, modern corporate feel
+    data: { 
+        labels: [{% for r in chart_data %}'{{ r[0] }}',{% endfor %}], 
+        datasets: [{
+            data: [{% for r in chart_data %}{{ r[1] }},{% endfor %}],
+            backgroundColor: ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#3b82f6', '#10b981', '#f59e0b'],
+            borderWidth: 0,
+            hoverOffset: 4
+        }] 
+    },
+    options: {
+        plugins: { legend: { position: 'right', labels: { boxWidth: 12, usePointStyle: true } } },
+        maintainAspectRatio: false,
+        cutout: '70%'
+    }
+});
+
+// Bar Chart Initialization
+new Chart(document.getElementById('barChart'), {
+    type: 'bar', 
+    data: { 
+        labels: [{% for r in monthly_data %}'{{ r[0] }}',{% endfor %}], 
+        datasets: [{
+            label: 'Monthly Spending', 
+            data: [{% for r in monthly_data %}{{ r[1] }},{% endfor %}],
+            backgroundColor: 'rgba(99, 102, 241, 0.85)',
+            hoverBackgroundColor: '#6366f1',
+            borderRadius: 6
+        }] 
+    },
+    options: {
+        scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' } }
+        },
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: false
+    }
+});
+
+// Yearly Budget Doughnut Chart Initialization
+new Chart(document.getElementById('yearlyBudgetChart'), {
+    type: 'doughnut',
+    data: {
+        labels: [{% if year_total <= year_budget %}'Yearly Spent','Remaining'{% else %}'Budget Limit','Overspent Amount'{% endif %}],
+        datasets: [{
+            data: [{% if year_total <= year_budget %}{{ year_total }},{{ year_budget - year_total }}{% else %}{{ year_budget }},{{ year_total - year_budget }}{% endif %}],
+            backgroundColor: [{% if year_total <= year_budget %}'#f59e0b','#0ea5e9'{% else %}'#f59e0b','#ef4444'{% endif %}],
+            borderWidth: 0,
+            hoverOffset: 6
+        }]
+    },
+    options: {
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { boxWidth: 12, usePointStyle: true }
+            }
+        },
+        maintainAspectRatio: false,
+        cutout: '70%'
+    }
+});
+</script>
+</body>
+</html>

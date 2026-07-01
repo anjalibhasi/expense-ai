@@ -1,0 +1,21 @@
+Date,Transaction Description,Category,Amount,Type
+2026-06-01,Grocery shopping at local market,Food & Drink,945.00,Expense
+2026-06-02,Electricity bill payment,Utilities,2180.00,Expense
+2026-06-03,Monthly rent payment,Rent,12000.00,Expense
+2026-06-04,Uber ride to office,Travel,430.00,Expense
+2026-06-05,Gym membership fee,Health & Fitness,1500.00,Expense
+2026-06-06,Movie tickets with friends,Entertainment,850.00,Expense
+2026-06-07,New shoes purchase,Shopping,3200.00,Expense
+2026-06-08,Doctor consultation,Health & Fitness,900.00,Expense
+2026-06-09,Phone recharge,Utilities,399.00,Expense
+2026-06-10,Online course subscription,Other,1299.00,Expense
+2026-06-11,Gas refill for bike,Gas/Automotive,780.00,Expense
+2026-06-12,Fast food delivery,Food & Drink,620.00,Expense
+2026-06-13,Weekend train tickets,Travel,560.00,Expense
+2026-06-14,Monthly internet bill,Utilities,1350.00,Expense
+2026-06-15,Clothes shopping spree,Shopping,2700.00,Expense
+2026-06-16,Family health insurance,Health & Fitness,2100.00,Expense
+2026-06-17,Concert tickets,Entertainment,1480.00,Expense
+2026-06-18,Bonus salary deposit,Salary,45000.00,Income
+2026-06-19,Stock investment transfer,Investment,10000.00,Income
+2026-06-20,Freelance payment,Other,5000.00,Income
