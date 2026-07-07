@@ -19,8 +19,6 @@ dist/
 # Data and models
 *.db
 *.sqlite3
-model.pkl
-vectorizer.pkl
 
 # Environment files
 .env
