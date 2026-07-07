@@ -137,8 +137,11 @@ def register_routes(app):
                     conn.commit()
                     conn.close()
                     return redirect(url_for('login'))
-                except sqlite3.IntegrityError:
-                    error = 'Username or email already exists.'
+                except Exception as exc:
+                    if isinstance(exc, sqlite3.IntegrityError) or 'integrity' in str(exc).lower() or 'duplicate' in str(exc).lower() or 'unique' in str(exc).lower():
+                        error = 'Username or email already exists.'
+                    else:
+                        raise
 
         conn.close()
         return render_template('register.html', error=error)
